@@ -1,7 +1,7 @@
 {
-  "name": "Simulador Web",
-  "short_name": "WebSim",
-  "start_url": "index.php",
+  "name": "Navegador",
+  "short_name": "Navegador",
+  "start_url": "index.html",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#ffffff",
