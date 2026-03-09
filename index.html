@@ -3,144 +3,148 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Navegador</title>
-    <link rel="manifest" href="manifest.json">
+    <title>Simulador de Estudos</title>
     
     <style>
-        /* --- RESET --- */
-        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body, html { height: 100%; overflow: hidden; background-color: #000; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, Roboto, sans-serif; }
+        body, html { height: 100%; overflow: hidden; background: #000; }
 
-        .app-container {
-            display: flex;
-            height: 100vh;
-            width: 100vw;
-            background: #fff;
-            transition: flex-direction 0.3s ease;
-        }
-
-        /* --- LOGICA DE POSICIONAMENTO --- */
-        /* Padrão (Barra em cima: Chrome, Brave, Firefox) */
-        .app-container.bar-top { flex-direction: column; }
-        /* Safari (Barra embaixo) */
-        .app-container.bar-bottom { flex-direction: column-reverse; }
-
-        .web-content { flex-grow: 1; width: 100%; position: relative; }
-        #sim-iframe { width: 100%; height: 100%; border: none; }
-
-        .nav-bar { display: flex; align-items: center; position: relative; z-index: 10; width: 100%; }
-
-        /* --- ESTILO SAFARI (iOS) --- */
-        .browser-safari .nav-bar {
-            background: rgba(248, 248, 248, 0.85);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-top: 0.5px solid #b5b5b5; /* Borda no topo pois a barra está embaixo */
-            padding: 10px 15px calc(10px + env(safe-area-inset-bottom)) 15px;
-        }
-        .browser-safari .address-field {
-            background: rgba(0, 0, 0, 0.05);
-            border-radius: 12px;
-            height: 42px;
-            flex: 1;
-            margin: 0 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: -apple-system, sans-serif;
-            font-size: 16px;
-        }
-
-        /* --- ESTILO CHROME/BRAVE/OTHERS (Android ou Barra Topo) --- */
-        .browser-chrome .nav-bar {
-            background: #ffffff;
-            padding: calc(10px + env(safe-area-inset-top)) 15px 10px 15px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-        }
-        .browser-chrome .address-field {
-            background: #f1f3f4;
-            border-radius: 24px;
-            height: 40px;
-            flex: 1;
-            padding: 0 20px;
-            font-family: 'Roboto', sans-serif;
-            font-size: 15px;
-            display: flex;
-            align-items: center;
-        }
-
-        /* UI Elements */
-        .btn-ui { display: flex; align-items: center; justify-content: center; min-width: 30px; }
-        .safari-only, .chrome-only { display: none; }
+        .app-container { display: flex; height: 100vh; width: 100vw; background: #fff; transition: flex-direction 0.3s; }
         
-        .browser-safari .safari-only { display: flex; color: #007aff; }
-        .browser-chrome .chrome-only { display: flex; color: #5f6368; }
+        /* Modos de exibição */
+        .mode-safari { flex-direction: column-reverse; }
+        .mode-chrome { flex-direction: column; }
 
-        #progress-bar {
+        /* --- BARRA DE NAVEGAÇÃO --- */
+        .nav-bar { display: flex; align-items: center; padding: 10px 15px; position: relative; background: #fff; z-index: 10; }
+        
+        .mode-safari .nav-bar { 
+            background: rgba(248, 248, 248, 0.9); 
+            backdrop-filter: blur(20px); 
+            border-top: 0.5px solid #ccc;
+            padding-bottom: calc(10px + env(safe-area-inset-bottom));
+        }
+
+        .mode-chrome .nav-bar { 
+            border-bottom: 1px solid #eee; 
+            padding-top: calc(10px + env(safe-area-inset-top)); 
+        }
+
+        /* Input de URL */
+        .address-group { flex: 1; position: relative; display: flex; align-items: center; margin: 0 10px; }
+        
+        .url-input {
+            width: 100%;
+            height: 38px;
+            border: none;
+            outline: none;
+            padding: 0 35px;
+            font-size: 16px;
+            color: #333;
+        }
+
+        .mode-safari .url-input { background: rgba(0,0,0,0.05); border-radius: 10px; text-align: center; }
+        .mode-chrome .url-input { background: #f1f3f4; border-radius: 20px; text-align: left; }
+
+        /* Botões */
+        .btn { border: none; background: none; cursor: pointer; color: #007aff; font-size: 20px; display: flex; align-items: center; }
+        .mode-chrome .btn { color: #5f6368; }
+
+        /* Ícone de Atualizar com Animação */
+        .refresh-icon { transition: transform 0.5s ease; }
+        .refreshing { transform: rotate(360deg); }
+
+        /* Barra de Progresso */
+        #progress {
             position: absolute;
             height: 2px;
             background: #007aff;
             width: 0%;
-            transition: width 0.4s ease;
-            z-index: 11;
+            top: 0;
+            left: 0;
+            transition: width 0.3s, opacity 0.3s;
         }
-        .bar-top #progress-bar { bottom: -2px; }
-        .bar-bottom #progress-bar { top: 0; }
+
+        /* IFRAME */
+        .content { flex: 1; width: 100%; position: relative; }
+        iframe { width: 100%; height: 100%; border: none; }
     </style>
 </head>
 <body>
 
-<div class="app-container" id="main-app">
+<div class="app-container" id="simulador">
     <header class="nav-bar">
-        <div class="safari-only btn-ui" style="font-size: 14px;">AA</div>
+        <button class="btn only-safari" style="font-size: 14px;">AA</button>
         
-        <div class="address-field">
-            <span class="safari-only" style="margin-right: 6px; font-size: 12px;">🔒</span>
-            <span id="url-text">gamipg.online</span>
+        <div class="address-group">
+            <span style="position: absolute; left: 12px; font-size: 12px;">🔒</span>
+            <input type="text" class="url-input" id="browser-url" value="google.com" spellcheck="false">
+            <button class="btn refresh-icon" id="btn-refresh" style="position: absolute; right: 12px; font-size: 16px;">↻</button>
         </div>
 
-        <div class="safari-only btn-ui" style="font-size: 22px;">↻</div>
-        <div class="chrome-only btn-ui" style="font-size: 20px;">⋮</div>
-
-        <div id="progress-bar"></div>
+        <button class="btn only-chrome">⋮</button>
     </header>
 
-    <main class="web-content">
-        <iframe src="https://demo.gamipg.online/" id="sim-iframe"></iframe>
+    <main class="content">
+        <div id="progress"></div>
+        <iframe src="https://demo.gamipg.online/" id="target-frame"></iframe>
     </main>
 </div>
 
 <script>
-    function identifyBrowser() {
+    const iframe = document.getElementById('target-frame');
+    const progressBar = document.getElementById('progress');
+    const refreshBtn = document.getElementById('btn-refresh');
+    const urlInput = document.getElementById('browser-url');
+    const simulador = document.getElementById('simulador');
+
+    // 1. Identificar Navegador e Ajustar Layout
+    function setupTheme() {
         const ua = navigator.userAgent;
-        const app = document.getElementById('main-app');
-        
-        const isIOS = /iPad|iPhone|iPod/.test(ua);
-        const isSafari = isIOS && /Safari/i.test(ua) && !/CriOS/i.test(ua); // CriOS é o Chrome no iOS
-        const isChrome = /Chrome|CriOS/i.test(ua);
-        const isFirefox = /Firefox/i.test(ua);
-
-        // Lógica Inteligente de Posicionamento e Tema
-        if (isSafari) {
-            app.classList.add('browser-safari');
-            app.classList.add('bar-bottom'); // Safari usa barra embaixo por padrão
+        if (/iPhone|iPad|iPod/i.test(ua) && /Safari/i.test(ua) && !/CriOS/i.test(ua)) {
+            simulador.classList.add('mode-safari');
         } else {
-            app.classList.add('browser-chrome');
-            app.classList.add('bar-top'); // Chrome, Brave, Firefox usam barra em cima
+            simulador.classList.add('mode-chrome');
         }
-
-        // Simular progresso
-        const bar = document.getElementById('progress-bar');
-        setTimeout(() => bar.style.width = '100%', 1500);
-        setTimeout(() => bar.style.opacity = '0', 2000);
     }
 
-    // Bloqueios de UI para manter a simulação
-    document.addEventListener('touchmove', (e) => {
-        if (!e.target.closest('#sim-iframe')) e.preventDefault();
-    }, { passive: false });
+    // 2. Função de "Carregamento" Visual
+    function simulateLoading() {
+        refreshBtn.classList.add('refreshing');
+        progressBar.style.opacity = '1';
+        progressBar.style.width = '0%';
+        
+        setTimeout(() => progressBar.style.width = '50%', 200);
+        setTimeout(() => progressBar.style.width = '85%', 600);
+        
+        // Recarrega o iframe de fato
+        iframe.src = iframe.src; 
 
-    window.onload = identifyBrowser;
+        setTimeout(() => {
+            progressBar.style.width = '100%';
+            setTimeout(() => {
+                progressBar.style.opacity = '0';
+                refreshBtn.classList.remove('refreshing');
+            }, 300);
+        }, 1000);
+    }
+
+    // 3. Eventos
+    refreshBtn.onclick = simulateLoading;
+
+    urlInput.addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            simulateLoading();
+            this.blur(); // Tira o foco do teclado
+        }
+    });
+
+    // Manter a URL fixa visualmente mesmo se clicarem
+    urlInput.onfocus = function() {
+        this.select(); // Facilita "fingir" que vai digitar outro site
+    };
+
+    setupTheme();
 </script>
 
 </body>
