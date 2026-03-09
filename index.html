@@ -3,145 +3,200 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Web Simulator</title>
+    <meta name="theme-color" id="nav-theme-color" content="#ffffff">
+    <title>Simulador Inteligente</title>
     <link rel="manifest" href="manifest.json">
     
     <style>
-        :root { --safe-top: env(safe-area-inset-top); --safe-bottom: env(safe-area-inset-bottom); }
+        :root {
+            --safe-top: env(safe-area-inset-top);
+            --safe-bottom: env(safe-area-inset-bottom);
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body, html { height: 100%; overflow: hidden; background: #000; font-family: -apple-system, Roboto, sans-serif; }
+        body, html { height: 100%; overflow: hidden; background: #000; font-family: -apple-system, system-ui, sans-serif; }
 
-        .app-shell { display: flex; height: 100vh; width: 100vw; background: #fff; }
+        /* Container Principal */
+        .app-shell {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+            background: #fff;
+            transition: all 0.3s ease;
+        }
 
-        /* --- LÓGICA DE POSICIONAMENTO --- */
-        .app-shell.layout-bottom { flex-direction: column-reverse; } /* Safari iOS */
-        .app-shell.layout-top { flex-direction: column; } /* Chrome, Brave, Firefox */
+        /* Lógica de Posicionamento */
+        .app-shell.is-safari { flex-direction: column-reverse; } /* Barra Embaixo */
+        .app-shell.is-chrome { flex-direction: column; }         /* Barra No Topo */
 
-        .viewport { flex-grow: 1; width: 100%; position: relative; background: #fff; }
+        /* Área do Site (Iframe) */
+        .viewport {
+            flex-grow: 1;
+            width: 100%;
+            position: relative;
+            background: #fff;
+        }
         iframe { width: 100%; height: 100%; border: none; }
 
-        /* --- BARRA DE NAVEGAÇÃO --- */
-        .nav-bar { display: flex; align-items: center; width: 100%; position: relative; z-index: 10; padding: 10px 15px; }
+        /* --- BARRA DE NAVEGAÇÃO SIMULADA --- */
+        .nav-bar {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            position: relative;
+            z-index: 99;
+            padding: 10px 15px;
+            transition: background 0.5s ease;
+        }
 
-        /* Estilo Safari (iOS) */
-        .theme-safari .nav-bar {
-            background: rgba(245, 245, 245, 0.9);
-            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-            border-top: 0.5px solid #b5b5b5;
+        /* --- ESTILO SAFARI (iOS) --- */
+        .is-safari .nav-bar {
+            /* Glassmorphism: Efeito de Vidro */
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 0.5px solid rgba(0,0,0,0.2);
             padding-bottom: calc(10px + var(--safe-bottom));
         }
-        .theme-safari .address-box {
-            background: rgba(0,0,0,0.06); border-radius: 12px; height: 42px;
-            flex: 1; margin: 0 10px; display: flex; align-items: center; justify-content: center;
+
+        .is-safari .address-field {
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 12px;
+            height: 44px;
+            flex: 1;
+            margin: 0 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 17px;
         }
 
-        /* Estilo Chrome/Android */
-        .theme-chrome .nav-bar {
-            background: #fff; border-bottom: 1px solid #eee;
+        /* --- ESTILO CHROME (Android) --- */
+        .is-chrome .nav-bar {
+            background: #ffffff;
+            border-bottom: 1px solid #eee;
             padding-top: calc(10px + var(--safe-top));
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
-        .theme-chrome .address-box {
-            background: #f1f3f4; border-radius: 24px; height: 42px;
-            flex: 1; margin: 0 10px; display: flex; align-items: center; padding: 0 15px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
         }
 
-        /* Input Invisível */
+        .is-chrome .address-field {
+            background: #f1f3f4;
+            border-radius: 24px;
+            height: 44px;
+            flex: 1;
+            margin: 0 10px;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+        }
+
+        /* Input de URL */
         .url-input {
-            width: 100%; border: none; background: transparent; outline: none;
-            font-size: 16px; color: #202124;
+            width: 100%;
+            border: none;
+            background: transparent;
+            outline: none;
+            font-size: 16px;
+            color: #333;
         }
-        .theme-safari .url-input { text-align: center; }
+        .is-safari .url-input { text-align: center; }
 
-        /* UI Helpers */
-        .icon { display: none; cursor: pointer; }
-        .theme-safari .icon-safari { display: block; color: #007aff; }
-        .theme-chrome .icon-chrome { display: block; color: #5f6368; }
+        /* Ícones e Botões */
+        .btn-ui { display: none; cursor: pointer; font-size: 20px; }
+        .is-safari .btn-safari { display: block; color: #007aff; }
+        .is-chrome .btn-chrome { display: block; color: #5f6368; }
 
-        /* Barra de Progresso */
+        /* Barra de Progresso Azul */
         #progress {
-            position: absolute; left: 0; height: 2px; background: #1a73e8; width: 0%;
+            position: absolute;
+            height: 2px;
+            background: #007aff;
+            width: 0%;
             transition: width 0.4s ease, opacity 0.3s;
         }
-        .layout-bottom #progress { top: 0; }
-        .layout-top #progress { bottom: 0; }
+        .is-safari #progress { top: 0; }
+        .is-chrome #progress { bottom: 0; }
     </style>
 </head>
 <body>
 
 <div class="app-shell" id="shell">
-    <header class="nav-bar">
-        <div class="icon icon-safari" style="font-size: 14px;">AA</div>
+    <header class="nav-bar" id="dynamic-nav">
+        <div class="btn-ui btn-safari" style="font-size: 14px; font-weight: 500;">AA</div>
         
-        <div class="address-box">
-            <span class="icon-safari" style="margin-right: 5px; font-size: 12px;">🔒</span>
-            <input type="text" id="url-field" class="url-input" value="google.com.br" spellcheck="false">
+        <div class="address-field">
+            <span class="btn-ui btn-safari" style="margin-right: 6px; font-size: 13px;">🔒</span>
+            <input type="text" id="fake-url" class="url-input" value="trust777.online" spellcheck="false">
         </div>
 
-        <div class="icon icon-safari" id="ref-ios" style="font-size: 20px;">↻</div>
-        <div class="icon icon-chrome" id="ref-and" style="font-size: 20px;">⋮</div>
+        <div class="btn-ui btn-safari" id="refresh-ios">↻</div>
+        <div class="btn-ui btn-chrome" id="menu-android">⋮</div>
 
         <div id="progress"></div>
     </header>
 
     <main class="viewport">
-        <iframe src="https://demo.gamipg.online/" id="content-frame"></iframe>
+        <iframe src="https://demo.gamipg.online/" id="target-iframe"></iframe>
     </main>
 </div>
 
 <script>
     const shell = document.getElementById('shell');
-    const input = document.getElementById('url-field');
-    const frame = document.getElementById('content-frame');
+    const nav = document.getElementById('dynamic-nav');
+    const themeMeta = document.getElementById('nav-theme-color');
     const progress = document.getElementById('progress');
+    const iframe = document.getElementById('target-iframe');
 
-    function initSimulator() {
+    // 1. Inteligência de Detecção (OS + Navegador)
+    function applySmartInterface() {
         const ua = navigator.userAgent;
-        
-        // 1. Detecção de PWA Instalado
-        const isPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-
-        // 2. Detecção de Navegador e SO
         const isIOS = /iPad|iPhone|iPod/.test(ua);
         const isSafari = isIOS && /Safari/i.test(ua) && !/CriOS/i.test(ua);
-        const isFirefox = /Firefox/i.test(ua);
-        const isBrave = navigator.brave !== undefined;
 
-        // 3. Aplicação Inteligente de Temas
-        if (isSafari) {
-            shell.classList.add('theme-safari', 'layout-bottom');
+        if (isSafari || isIOS) {
+            shell.classList.add('is-safari');
+            // Cor adaptativa inicial (verde escuro do seu exemplo)
+            updateThemeColor('#002b24', true); 
         } else {
-            shell.classList.add('theme-chrome', 'layout-top');
+            shell.classList.add('is-chrome');
+            updateThemeColor('#ffffff', false);
         }
-
-        // Se for Firefox ou Brave, podemos ajustar detalhes específicos aqui
-        if (isFirefox) console.log("Ajustes para Firefox aplicados");
     }
 
-    function loadEffect() {
+    // 2. Função que muda a cor da barra igual ao Safari Real
+    function updateThemeColor(color, isDark) {
+        themeMeta.setAttribute('content', color);
+        nav.style.background = isDark ? `rgba(0, 43, 36, 0.85)` : `rgba(255, 255, 255, 0.85)`;
+        document.getElementById('fake-url').style.color = isDark ? '#fff' : '#000';
+    }
+
+    // 3. Simulação de Navegação
+    function triggerLoading() {
         progress.style.opacity = '1';
         progress.style.width = '40%';
-        setTimeout(() => progress.style.width = '90%', 500);
+        setTimeout(() => progress.style.width = '80%', 400);
         
-        // Força o reload do iframe estático
-        frame.src = frame.src;
+        // Recarrega o conteúdo fixo
+        iframe.src = iframe.src;
 
         setTimeout(() => {
             progress.style.width = '100%';
             setTimeout(() => { progress.style.opacity = '0'; progress.style.width = '0%'; }, 300);
-        }, 1000);
+        }, 800);
     }
 
-    input.addEventListener('keypress', (e) => { if (e.key === 'Enter') { loadEffect(); input.blur(); } });
-    document.getElementById('ref-ios').onclick = loadEffect;
-    document.getElementById('ref-and').onclick = loadEffect;
+    // Eventos
+    document.getElementById('fake-url').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') { triggerLoading(); e.target.blur(); }
+    });
+    document.getElementById('refresh-ios').onclick = triggerLoading;
 
-    // Impedir comportamento de "puxar para atualizar" nativo do navegador
-    document.body.addEventListener('touchmove', (e) => {
-        if (!e.target.closest('#content-frame')) e.preventDefault();
+    // Bloqueia o scroll elástico do PWA para não "quebrar" a ilusão
+    document.addEventListener('touchmove', (e) => {
+        if (!e.target.closest('iframe')) e.preventDefault();
     }, { passive: false });
 
-    initSimulator();
+    applySmartInterface();
 </script>
 
 </body>
